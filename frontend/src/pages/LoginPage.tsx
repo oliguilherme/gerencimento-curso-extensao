@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import { login } from "../services/authService";
 import type { LoginCredentials, LoginResponse } from "../types/auth";
+import { useNavigate } from "react-router-dom";
 
 const inputClass =
   "h-11 w-full rounded-lg border border-line-strong bg-surface px-3.5 text-sm text-ink " +
@@ -59,6 +60,7 @@ function EyeIcon({ off }: { off: boolean }) {
 }
 
 export default function LoginPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -79,8 +81,8 @@ export default function LoginPage() {
         senha: password,
       };
 
-      const result = await login(credentials);
-      setSession(result);
+      await login(credentials)
+      navigate('/logout', { replace: true })
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);

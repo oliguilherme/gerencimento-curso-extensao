@@ -1,5 +1,7 @@
 import type { LoginCredentials, LoginResponse } from "../types/auth";
 import { API_URL } from "../config/api";
+import {clearTokens, getRefreshToken, saveTokens,
+} from "../lib/auth";
 
 export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
   const response = await fetch (
@@ -44,8 +46,26 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
       throw new Error('A API retornou uma resposta inesperada.')
     }
 
-    return {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken
+    saveTokens(result.accessToken, result.refreshToken);
+
+  return {
+    accessToken: result.accessToken,
+    refreshToken: result.refreshToken,
+  };
+}
+
+export async function logout() {
+  const refreshToken = getRefreshToken();
+
+  try {
+    if (refreshToken) {
+      await fetch(`${API_URL}/autenticacao/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
     }
+  } finally {
+    clearTokens();
+  }
 }
