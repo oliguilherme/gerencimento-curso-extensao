@@ -149,6 +149,8 @@ const ALUNOS_FIXOS: Spec[] = [
 ]
 const PROF_FIXOS: Spec[] = [{ nome: 'Paulo Henrique Viana', email: 'paulo.viana@ifce.edu.br', senha: 'professor123' }]
 const DEPPI_FIXOS: Spec[] = [{ nome: 'Márcia Holanda', email: 'marcia.holanda@ifce.edu.br', senha: 'deppi123' }]
+const ADMIN_DEPPI: Spec = { nome: 'Administrador DEPPI', email: 'admin.deppi@ifce.edu.br', senha: 'admin123' }  // 
+
 
 // ─── Helpers de banco ──────────────────────────────────────────────────────
 type Inst = { id: string; sigla: string }
@@ -256,11 +258,12 @@ const quando = (status: StatusInsc, dias?: number) => {
 export async function seedBulk() {
   console.log('▶ seed-bulk: iniciando...')
 
-  const [papelDeppi, papelProf, papelAluno] = await Promise.all([
+  const [papelDeppi, papelProf, papelAluno, papelAdminDeppi] = await Promise.all([
     prisma.papel.findUniqueOrThrow({ where: { nome: 'DEPPI' } }),
     prisma.papel.findUniqueOrThrow({ where: { nome: 'PROFESSOR' } }),
     prisma.papel.findUniqueOrThrow({ where: { nome: 'ALUNO' } }),
-  ])
+    prisma.papel.upsert({ where: { nome: 'ADMIN_DEPPI' }, update: {}, create: { nome: 'ADMIN_DEPPI' } }),
+  ]);
 
   // 1. Instituições e departamentos -----------------------------------------
   await prisma.instituicao.createMany({ data: CAMPI, skipDuplicates: true })
@@ -528,6 +531,13 @@ export async function seedBulk() {
     })),
     skipDuplicates: true,
   })
+
+   const adminIds = await criarUsuarios([ADMIN_DEPPI], papelDeppi.id, instituicoes, [30, 55])
+    await criarServidores([ADMIN_DEPPI], adminIds, '9', 'Técnico Administrativo em Educação', ['DEPPI'], instituicoes)
+    await prisma.userPapel.createMany({
+      data: [{ userId: adminIds.get(ADMIN_DEPPI.email)!, papelId: papelAdminDeppi.id }],
+      skipDuplicates: true,
+    })
 
   // 9. Resumo ---------------------------------------------------------------
   const [u, a, p, c, i, inst] = await Promise.all([

@@ -8,7 +8,7 @@ const router = Router()
 router.get(
   '/admin',
   authMiddleware,
-  checkRole('DEPPI'),
+  checkRole('ADMIN_DEPPI'),
   DashboardController.getAdminDashboard,
 );
 
