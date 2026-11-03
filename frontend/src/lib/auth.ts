@@ -14,3 +14,7 @@ export function clearTokens() {
   localStorage.removeItem(ACCESS_KEY)
   localStorage.removeItem(REFRESH_KEY)
 }
+
+export function getAccessToken(): string | null {
+  return localStorage.getItem(ACCESS_KEY)
+}

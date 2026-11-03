@@ -1,15 +1,13 @@
 import PageHeader from "../../components/dashboard/PageHeader";
 import StatStrip from "../../components/dashboard/StatStript";
-import DistributionBars  from "../../components/dashboard/DistributionBars";
+import DistributionBars from "../../components/dashboard/DistributionBars";
 
-import DonutChart  from "../../components/dashboard/DonutChart";
+import DonutChart from "../../components/dashboard/DonutChart";
 import {
   mockStats,
   mockEnrollmentRows,
   mockCourseSegments,
 } from "../../mocks/adminDashboard";
-
-
 
 export default function AdminHome() {
   const now = new Date();
