@@ -15,6 +15,7 @@ import { InstituicoesRoutes } from './modules/instituicoes/instituicoes.routes.j
 import { UsuariosRoutes } from './modules/usuarios/usuarios.routes.js';
 import { PermissoesRoutes } from './modules/permissoes/permissoes.routes.js';
 import { DepartamentosRoutes } from './modules/departamentos/departamentos.routes.js';
+import { DashboardRoutes } from './modules/dashboard/dashboard.routes.js'
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/usuarios', UsuariosRoutes);
 app.use('/permissoes', PermissoesRoutes);
 app.use('/departamentos', DepartamentosRoutes);
 app.use('/uploads', express.static(path.resolve('uploads')));
+app.use('/dashboard', DashboardRoutes)
 
 app.get('/health', (req, res) => {
   res.status(200).json({
