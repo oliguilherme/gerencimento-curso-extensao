@@ -6,6 +6,9 @@ import DistributionBars, {
   type DistributionBarRow,
 } from "../../components/dashboard/DistributionBars";
 import { Ban, CheckCircle2, ClipboardList, Clock, XCircle } from "lucide-react";
+import DonutChart, {
+  type DonutSegment,
+} from "../../components/dashboard/DonutChart";
 
 const mockStats: StatItem[] = [
   {
@@ -77,6 +80,39 @@ const mockEnrollmentRows: DistributionBarRow[] = [
   },
 ];
 
+const mockCourseSegments: DonutSegment[] = [
+  {
+    id: "RASCUNHO",
+    label: "Rascunho",
+    value: 4,
+    color: "#B45309",
+  },
+  {
+    id: "PUBLICADO",
+    label: "Publicado",
+    value: 5,
+    color: "#1D4ED8",
+  },
+  {
+    id: "EM_ANDAMENTO",
+    label: "Em andamento",
+    value: 17,
+    color: "#15803D",
+  },
+  {
+    id: "ENCERRADO",
+    label: "Encerrado",
+    value: 9,
+    color: "#64748B",
+  },
+  {
+    id: "CANCELADO",
+    label: "Cancelado",
+    value: 3,
+    color: "#B91C1C",
+  },
+];
+
 export default function AdminHome() {
   const now = new Date();
 
@@ -101,17 +137,31 @@ export default function AdminHome() {
 
       <StatStrip items={mockStats} />
 
-      <section className="rounded-lg border border-line bg-surface">
-        <header className="px-5 pt-5">
-          <h2 className="font-display text-[15px] font-semibold text-ink">
-            Inscrições por situação
-          </h2>
-        </header>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-lg border border-line bg-surface">
+          <header className="px-5 pt-5">
+            <h2 className="font-display text-[15px] font-semibold text-ink">
+              Inscrições por situação
+            </h2>
+          </header>
 
-        <div className="p-5">
-          <DistributionBars rows={mockEnrollmentRows} />
-        </div>
-      </section>
+          <div className="p-5">
+            <DistributionBars rows={mockEnrollmentRows} />
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-line bg-surface">
+          <header className="px-5 pt-5">
+            <h2 className="font-display text-[15px] font-semibold text-ink">
+              Cursos por situação
+            </h2>
+          </header>
+
+          <div className="p-5">
+            <DonutChart segments={mockCourseSegments} />
+          </div>
+        </section>
+      </div>
     </section>
   );
 }
