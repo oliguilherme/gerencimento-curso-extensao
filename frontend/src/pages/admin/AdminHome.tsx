@@ -1,3 +1,5 @@
+import PageHeader from "../../components/dashboard/PageHeader";
+
 export default function AdminHome() {
   const now = new Date();
 
@@ -14,16 +16,11 @@ export default function AdminHome() {
   }).format(now);
 
   return (
-    <section>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-[26px] font-semibold text-ink">
-            {greeting}, administrador
-          </h1>
-
-          <p className="mt-1 text-sm text-ink-2">{formattedDate}</p>
-        </div>
-      </div>
+    <section className="flex flex-col gap-6">
+      <PageHeader
+        title={`${greeting}, administrador`}
+        subtitle={formattedDate}
+      />
     </section>
   );
 }
