@@ -1,4 +1,39 @@
 import PageHeader from "../../components/dashboard/PageHeader";
+import StatStrip, {
+  type StatItem,
+} from "../../components/dashboard/StatStript";
+
+const mockStats: StatItem[] = [
+  {
+    label: "Usuários",
+    value: 1284,
+  },
+  {
+    label: "Alunos",
+    value: 1142,
+  },
+  {
+    label: "Professores",
+    value: 96,
+  },
+  {
+    label: "Cursos",
+    value: 38,
+  },
+  {
+    label: "Inscrições",
+    value: 2317,
+  },
+  {
+    label: "Instituições",
+    value: 7,
+  },
+  {
+    label: "Vagas restantes",
+    value: 214,
+    highlight: true,
+  },
+];
 
 export default function AdminHome() {
   const now = new Date();
@@ -21,6 +56,8 @@ export default function AdminHome() {
         title={`${greeting}, administrador`}
         subtitle={formattedDate}
       />
+
+      <StatStrip items={mockStats} />
     </section>
   );
 }
