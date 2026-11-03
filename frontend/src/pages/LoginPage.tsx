@@ -82,7 +82,7 @@ export default function LoginPage() {
       };
 
       await login(credentials)
-      navigate('/logout', { replace: true })
+      navigate('/inicio', { replace: true })
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);
