@@ -6,16 +6,24 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { isAuthenticated, hasRole } = useAuth();
+  const { isAuthenticated, isInitializing, hasRole } = useAuth();
 
-  if (!isAuthenticated) {
-     return <Navigate to="/login" replace />
+  if (isInitializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        Verificando sessão...
+      </div>
+    );
   }
 
-  const hasAccess = allowedRoles.some(role => hasRole(role));
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const hasAccess = allowedRoles.some((role) => hasRole(role));
 
   if (!hasAccess) {
-    return <Navigate to="/acesso-negado" replace />
+    return <Navigate to="/acesso-negado" replace />;
   }
 
   return <Outlet />;
