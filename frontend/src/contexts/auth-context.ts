@@ -4,6 +4,7 @@ import type { AccessTokenPayload, LoginCredentials } from "../types/auth";
 export interface AuthContextType {
   user: AccessTokenPayload | null;
   isAuthenticated: boolean;
+  isInitializing: boolean;
 
   hasRole: (role: string) => boolean;
 
