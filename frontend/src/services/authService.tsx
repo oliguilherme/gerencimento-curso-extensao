@@ -50,7 +50,9 @@ export async function login(
   };
 }
 
-export async function refreshAccessToken(): Promise<string> {
+let refreshPromise: Promise<string> | null = null;
+
+async function performRefreshAccessToken(): Promise<string> {
   const refreshToken = getRefreshToken();
 
   if (!refreshToken) {
@@ -116,4 +118,14 @@ export async function logout() {
   } finally {
     clearTokens();
   }
+}
+
+export function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = performRefreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
 }
