@@ -1,19 +1,10 @@
 import { API_URL } from "../config/api";
-import { getAccessToken } from "../lib/auth";
+import { apiFetch } from "../lib/apiFetch";
 import type { AdminDashboardResponse } from "../types/dashboard";
 
 export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
-  const accessToken = getAccessToken();
-
-  if (!accessToken) {
-    throw new Error("Sessão não encontrada. Faça login novamente.");
-  }
-
-  const response = await fetch(`${API_URL}/dashboard/admin`, {
+  const response = await apiFetch(`${API_URL}/dashboard/admin`, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
   });
 
   const result: unknown = await response.json().catch(() => null);

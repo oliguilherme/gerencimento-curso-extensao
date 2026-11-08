@@ -22,6 +22,8 @@ import {
 
 import { AuthContext } from "./auth-context";
 
+import { AUTH_SESSION_EXPIRED_EVENT } from "../lib/authEvents";
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -32,6 +34,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    function handleSessionExpired() {
+      setUser(null);
+    }
+
+    window.addEventListener(
+      AUTH_SESSION_EXPIRED_EVENT,
+      handleSessionExpired,
+    );
+
+    return () => {
+      window.removeEventListener(
+        AUTH_SESSION_EXPIRED_EVENT,
+        handleSessionExpired,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
