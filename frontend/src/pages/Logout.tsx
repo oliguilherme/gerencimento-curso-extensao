@@ -1,21 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../services/authService";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Logout() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const [loading, setLoading] = useState(false);
 
   async function handleConfirm() {
     setLoading(true);
-    await logout();
-    navigate("/login", { replace: true });
+
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Erro ao encerrar sessão:", error);
+    } finally {
+      navigate("/login", { replace: true });
+    }
   }
 
   return (
     <main className="grid min-h-screen place-items-center bg-page p-6">
       <div
         role="dialog"
+        aria-modal="true"
         aria-labelledby="logout-title"
         className="w-full max-w-[500px] overflow-hidden rounded-xl border border-line bg-surface shadow-[0_24px_64px_rgba(0,0,0,0.18)]"
       >
@@ -26,6 +35,7 @@ export default function Logout() {
           >
             Sair do sistema
           </h1>
+
           <p className="mt-2 text-sm text-ink-2">
             Tem certeza que deseja encerrar sua sessão?
           </p>
@@ -40,6 +50,7 @@ export default function Logout() {
           >
             Cancelar
           </button>
+
           <button
             type="button"
             onClick={handleConfirm}

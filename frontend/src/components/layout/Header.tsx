@@ -1,14 +1,14 @@
 import { Menu } from "lucide-react";
-import type { AppRole } from "../../config/nav";
+import { rolePriority, type AppRole } from "../../config/nav";
+import { useAuth } from "../../hooks/useAuth";
 
 interface HeaderProps {
-  name: string;
-  role: AppRole;
   pageTitle: string;
 }
 
 const roleLabels: Record<AppRole, string> = {
   ADMIN: "ADMIN",
+  ADMIN_DEPPI: "ADMIN. DEPPI",
   DEPPI: "DEPPI",
   PROFESSOR: "PROFESSOR",
   ALUNO: "ALUNO",
@@ -24,7 +24,14 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export default function Header({ name, role, pageTitle }: HeaderProps) {
+export default function Header({ pageTitle }: HeaderProps) {
+  const { user } = useAuth();
+
+  const name = user?.name ?? "Usuário";
+
+  // Identifica o papel de maior prioridade do usuário.
+  const role = rolePriority.find((role) => user?.roles.includes(role));
+
   return (
     <header className="flex h-[58px] items-center justify-between border-b border-line bg-surface px-6">
       <div className="flex items-center gap-3 text-sm text-ink-2">
@@ -37,7 +44,7 @@ export default function Header({ name, role, pageTitle }: HeaderProps) {
           <p className="text-[13px] font-semibold text-ink">{name}</p>
 
           <p className="font-mono text-[10px] text-accent">
-            {roleLabels[role]}
+            {role ? roleLabels[role] : "USUÁRIO"}
           </p>
         </div>
 

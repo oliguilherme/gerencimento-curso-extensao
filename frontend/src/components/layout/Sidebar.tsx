@@ -1,12 +1,15 @@
 import { NavLink } from "react-router-dom";
-import { navigationByRole, type AppRole } from "../../config/nav";
 
-interface SidebarProps {
-  role: AppRole;
-}
+import { navigationByRole, rolePriority } from "../../config/nav";
 
-export default function Sidebar({ role }: SidebarProps) {
-  const menuItems = navigationByRole[role];
+import { useAuth } from "../../hooks/useAuth";
+
+export default function Sidebar() {
+  const { user } = useAuth();
+
+  const currentRole = rolePriority.find((role) => user?.roles.includes(role));
+
+  const menuItems = currentRole ? navigationByRole[currentRole] : [];
 
   return (
     <aside className="hidden min-h-screen w-64 shrink-0 border-r border-line bg-sidebar px-3 py-5 md:block">

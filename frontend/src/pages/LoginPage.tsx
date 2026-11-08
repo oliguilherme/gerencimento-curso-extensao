@@ -1,7 +1,7 @@
-import { useState, type SubmitEvent } from "react";
-import { login } from "../services/authService";
-import type { LoginCredentials, LoginResponse } from "../types/auth";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import type { LoginCredentials } from "../types/auth";
 
 const inputClass =
   "h-11 w-full rounded-lg border border-line-strong bg-surface px-3.5 text-sm text-ink " +
@@ -15,8 +15,10 @@ function Logo() {
       <div className="grid size-9 place-items-center rounded-lg bg-accent font-display text-lg font-semibold text-white">
         D
       </div>
+
       <div className="leading-tight">
         <p className="font-display text-base font-semibold text-ink">DEPPI</p>
+
         <p className="text-xs text-ink-2">IFCE · Extensão</p>
       </div>
     </div>
@@ -60,7 +62,9 @@ function EyeIcon({ off }: { off: boolean }) {
 }
 
 export default function LoginPage() {
-  const navigate = useNavigate()
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -68,10 +72,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [session, setSession] = useState<LoginResponse | null>(null);
-
-  async function handleSubmit(event: SubmitEvent) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     setError(null);
     setLoading(true);
 
@@ -81,8 +84,9 @@ export default function LoginPage() {
         senha: password,
       };
 
-      await login(credentials)
-      navigate('/inicio', { replace: true })
+      await login(credentials);
+
+      navigate("/inicio", { replace: true });
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);
@@ -92,28 +96,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (session) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-page p-6">
-        <div className="w-full max-w-[380px] rounded-[10px] border border-line bg-surface p-5 text-center">
-          <h1 className="font-display text-[26px] leading-[31px] font-semibold text-ink">
-            Login realizado!
-          </h1>
-          <p className="mt-2 text-sm text-ink-2">
-            Você foi autenticado com sucesso.
-          </p>
-          <button
-            type="button"
-            onClick={() => setSession(null)}
-            className="mt-6 h-10 rounded-lg border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
-          >
-            Voltar ao login
-          </button>
-        </div>
-      </main>
-    );
   }
 
   return (
@@ -130,6 +112,7 @@ export default function LoginPage() {
           <h2 className="font-display text-[40px] leading-[44px] font-semibold text-ink">
             Cursos de extensão do IFCE, num só lugar.
           </h2>
+
           <p className="mt-3 text-[15px] leading-6 text-ink-2">
             Inscreva-se, envie seus documentos e acompanhe a análise da sua
             inscrição.
@@ -147,6 +130,7 @@ export default function LoginPage() {
           <h1 className="font-display text-[26px] leading-[31px] font-semibold text-ink">
             Entrar
           </h1>
+
           <p className="mt-1.5 text-sm text-ink-2">
             Use seu e-mail institucional.
           </p>
@@ -162,10 +146,15 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* E-mail */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-[13px] font-medium text-ink">
+              <label
+                htmlFor="email"
+                className="text-[13px] font-medium text-ink"
+              >
                 E-mail institucional
               </label>
+
               <input
                 id="email"
                 name="email"
@@ -179,6 +168,7 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Senha */}
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="password"
@@ -186,6 +176,7 @@ export default function LoginPage() {
               >
                 Senha
               </label>
+
               <div className="relative">
                 <input
                   id="password"
@@ -198,6 +189,7 @@ export default function LoginPage() {
                   required
                   className={`${inputClass} pr-11`}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
@@ -210,6 +202,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Botão de login */}
             <button
               type="submit"
               disabled={loading}

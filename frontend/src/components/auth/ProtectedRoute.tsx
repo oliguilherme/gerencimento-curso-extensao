@@ -1,23 +1,21 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { getAccessTokenPayload } from "../../lib/auth";
+import { useAuth } from "../../hooks/useAuth";
 
 interface ProtectedRouteProps {
   allowedRoles: string[];
 }
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const payload = getAccessTokenPayload();
+  const { isAuthenticated, hasRole } = useAuth();
 
-  if (!payload) {
-    return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+     return <Navigate to="/login" replace />
   }
 
-  const hasPermission = allowedRoles.some((role) =>
-    payload.roles.includes(role),
-  );
+  const hasAccess = allowedRoles.some(role => hasRole(role));
 
-  if (!hasPermission) {
-    return <Navigate to="/acesso-negado" replace />;
+  if (!hasAccess) {
+    return <Navigate to="/acesso-negado" replace />
   }
 
   return <Outlet />;
