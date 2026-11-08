@@ -9,14 +9,16 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const payload = getAccessTokenPayload();
 
   if (!payload) {
-    return <Navigate to="/login" replace/>
+    return <Navigate to="/login" replace />;
   }
 
-  const hasPermission = allowedRoles.some((role) => payload.roles.includes(role));
+  const hasPermission = allowedRoles.some((role) =>
+    payload.roles.includes(role),
+  );
 
   if (!hasPermission) {
-    return <Navigate to="/acesso-negado" replace/>
+    return <Navigate to="/acesso-negado" replace />;
   }
 
-  return <Outlet />
+  return <Outlet />;
 }
