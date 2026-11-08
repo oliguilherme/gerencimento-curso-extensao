@@ -1,3 +1,4 @@
+import type { AccessTokenPayload } from "../types/auth";
 const ACCESS_KEY = "accessToken";
 const REFRESH_KEY = "refreshToken";
 
@@ -17,12 +18,6 @@ export function clearTokens() {
 
 export function getAccessToken(): string | null {
   return localStorage.getItem(ACCESS_KEY);
-}
-
-export interface AccessTokenPayload {
-  sub: string;
-  roles: string[];
-  exp: number;
 }
 
 export function getAccessTokenPayload(): AccessTokenPayload | null {
@@ -57,8 +52,12 @@ export function getAccessTokenPayload(): AccessTokenPayload | null {
 
     if (
       typeof data.sub !== "string" ||
+      typeof data.name !== "string" ||
+      typeof data.email !== "string" ||
       !Array.isArray(data.roles) ||
       !data.roles.every((role) => typeof role === "string") ||
+      !Array.isArray(data.permissions) ||
+      !data.permissions.every((permission) => typeof permission === "string") ||
       typeof data.exp !== "number"
     ) {
       return null;
@@ -68,11 +67,7 @@ export function getAccessTokenPayload(): AccessTokenPayload | null {
       return null;
     }
 
-    return {
-      sub: data.sub,
-      roles: data.roles,
-      exp: data.exp,
-    };
+    return data as unknown as AccessTokenPayload;
   } catch {
     return null;
   }
