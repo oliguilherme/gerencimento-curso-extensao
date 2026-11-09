@@ -22,14 +22,11 @@ export type ModeloOferta =
   | "ONLINE"
   | "HIBRIDO";
 
-export type Curso = {
+export interface Curso {
   id: string;
   createdAt: string;
-  instituicaoId: string;
-  professorId: string;
 
   titulo: string;
-  status: StatusCurso;
   tipoAcao: TipoAcao;
   tipo: TipoCurso;
 
@@ -38,7 +35,9 @@ export type Curso = {
   localAtuacao: LocalAtuacao;
   modeloOferta: ModeloOferta;
 
+  status: StatusCurso;
   imagemCapa: string | null;
+
   cargaHoraria: number;
   dataInicio: string;
   dataFim: string;
@@ -48,4 +47,14 @@ export type Curso = {
 
   fomento: string | null;
   programaInstitucional: string | null;
+
+  apresentacao: string;
+  justificativa: string;
+  publicoAlvo: string;
+  objetivoGeral: string;
+  objetivosEspecificos: string;
+  metodologia: string;
+
+  professorId: string;
+  instituicaoId: string;
 }
