@@ -3,9 +3,9 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import Logout from "./pages/Logout";
 import AppLayout from "./components/layout/AppLayout";
-import AdminHome from "./pages/admin/AdminHome";
 import AccessDenied from "./pages/AccessDenied";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import HomeByRole from "./components/HomeByRole";
 
 function App() {
   return (
@@ -15,9 +15,9 @@ function App() {
 
       <Route path="/logout" element={<Logout />} />
 
-      <Route element={<ProtectedRoute allowedRoles={["ADMIN_DEPPI"]} />}>
+      <Route element={<ProtectedRoute allowedRoles={["ADMIN_DEPPI", "PROFESSOR"]} />}>
         <Route element={<AppLayout />}>
-          <Route path="/inicio" element={<AdminHome />} />
+          <Route path="/inicio" element={<HomeByRole />} />
         </Route>
       </Route>
 
