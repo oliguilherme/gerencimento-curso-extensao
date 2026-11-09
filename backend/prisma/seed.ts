@@ -10,9 +10,14 @@
  *
  * Logins criados (além dos do seed original):
  *   marcia.holanda@ifce.edu.br     / deppi123       (DEPPI)
- *   paulo.viana@ifce.edu.br        / professor123   (PROFESSOR)
+ *   paulo.viana@ifce.edu.br        / professor123   (PROFESSOR, 14 cursos)
+ *   renata.bezerra@ifce.edu.br     / professor123   (PROFESSOR, 7 cursos)
+ *   tiago.menezes@ifce.edu.br      / professor123   (PROFESSOR, 2 cursos)
  *   ana.rocha@aluno.ifce.edu.br    / aluno123       (ALUNO)
  *   todos os demais gerados        / senha123
+ *
+ * Nota: a distribuição de autoria mudou em relação à versão anterior. Como os cursos têm
+ * IDs determinísticos e skipDuplicates, rode em banco limpo para que ela valha.
  */
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
@@ -147,10 +152,21 @@ const ALUNOS_FIXOS: Spec[] = [
   { nome: 'João Pedro Albuquerque',  email: 'joao.albuquerque@aluno.ifce.edu.br', senha: SENHA_PADRAO },
   { nome: 'Mariana Costa Freitas',   email: 'mariana.freitas@aluno.ifce.edu.br',  senha: SENHA_PADRAO },
 ]
-const PROF_FIXOS: Spec[] = [{ nome: 'Paulo Henrique Viana', email: 'paulo.viana@ifce.edu.br', senha: 'professor123' }]
+const PROF_FIXOS: Spec[] = [
+  { nome: 'Paulo Henrique Viana',    email: 'paulo.viana@ifce.edu.br',    senha: 'professor123' },
+  { nome: 'Renata Bezerra Monteiro', email: 'renata.bezerra@ifce.edu.br', senha: 'professor123' },
+  { nome: 'Tiago Menezes Dantas',    email: 'tiago.menezes@ifce.edu.br',  senha: 'professor123' },
+]
 const DEPPI_FIXOS: Spec[] = [{ nome: 'Márcia Holanda', email: 'marcia.holanda@ifce.edu.br', senha: 'deppi123' }]
-const ADMIN_DEPPI: Spec = { nome: 'Administrador DEPPI', email: 'admin.deppi@ifce.edu.br', senha: 'admin123' }  // 
+const ADMIN_DEPPI: Spec = { nome: 'Administrador DEPPI', email: 'admin.deppi@ifce.edu.br', senha: 'admin123' }
 
+// Cotas de autoria por status. Somadas, devem caber em PLANO_CURSOS (6/8/9/12/3 em escala 1).
+// Em escala reduzida, o primeiro da lista consome as vagas antes dos demais.
+const DONOS_FIXOS: { email: string; cota: Partial<Record<StatusCurso, number>> }[] = [
+  { email: 'paulo.viana@ifce.edu.br',    cota: { RASCUNHO: 1, PUBLICADO: 3, EM_ANDAMENTO: 4, ENCERRADO: 5, CANCELADO: 1 } }, // 14
+  { email: 'renata.bezerra@ifce.edu.br', cota: { RASCUNHO: 1, PUBLICADO: 1, EM_ANDAMENTO: 2, ENCERRADO: 3 } },                // 7
+  { email: 'tiago.menezes@ifce.edu.br',  cota: { PUBLICADO: 1, ENCERRADO: 1 } },                                              // 2
+]
 
 // ─── Helpers de banco ──────────────────────────────────────────────────────
 type Inst = { id: string; sigla: string }
@@ -259,11 +275,11 @@ export async function seedBulk() {
   console.log('▶ seed-bulk: iniciando...')
 
   const [papelDeppi, papelProf, papelAluno, papelAdminDeppi] = await Promise.all([
-    prisma.papel.findUniqueOrThrow({ where: { nome: 'DEPPI' } }),
-    prisma.papel.findUniqueOrThrow({ where: { nome: 'PROFESSOR' } }),
-    prisma.papel.findUniqueOrThrow({ where: { nome: 'ALUNO' } }),
-    prisma.papel.upsert({ where: { nome: 'ADMIN_DEPPI' }, update: {}, create: { nome: 'ADMIN_DEPPI' } }),
-  ]);
+  prisma.papel.upsert({ where: { nome: 'DEPPI' }, update: {}, create: { nome: 'DEPPI' } }),
+  prisma.papel.upsert({ where: { nome: 'PROFESSOR' }, update: {}, create: { nome: 'PROFESSOR' } }),
+  prisma.papel.upsert({ where: { nome: 'ALUNO' }, update: {}, create: { nome: 'ALUNO' } }),
+  prisma.papel.upsert({ where: { nome: 'ADMIN_DEPPI' }, update: {}, create: { nome: 'ADMIN_DEPPI' } }),
+])
 
   // 1. Instituições e departamentos -----------------------------------------
   await prisma.instituicao.createMany({ data: CAMPI, skipDuplicates: true })
@@ -283,7 +299,8 @@ export async function seedBulk() {
   const deppiUserIds = [...deppiIds.values()]
 
   // 3. Professores ----------------------------------------------------------
-  const profSpecs = gerarPessoas(QTD_PROFESSORES, 'ifce.edu.br', PROF_FIXOS)
+  // Math.max: em escala pequena, slice(0, qtd) não pode cortar os professores fixos.
+  const profSpecs = gerarPessoas(Math.max(QTD_PROFESSORES, PROF_FIXOS.length), 'ifce.edu.br', PROF_FIXOS)
   const profUserIds = await criarUsuarios(profSpecs, papelProf.id, instituicoes, [28, 62])
   const servidorPorUser = await criarServidores(
     profSpecs, profUserIds, '3', 'Professor do Ensino Básico, Técnico e Tecnológico', SETORES_PROF, instituicoes,
@@ -303,11 +320,17 @@ export async function seedBulk() {
   }))
   for (const c of lotes(novosProf)) await prisma.perfilProfessor.createMany({ data: c, skipDuplicates: true })
 
-  const userPorServidor = new Map([...servidorPorUser].map(([u, s]) => [s, u] as const))
+  // findMany sem orderBy não garante ordem: montar `profs` na ordem das specs mantém a
+  // atribuição de autoria estável entre execuções.
   const perfisProf = await prisma.perfilProfessor.findMany({
     where: { perfilServidorId: { in: servidorIds } }, select: { id: true, perfilServidorId: true },
   })
-  const profs = perfisProf.map(p => ({ perfilProfessorId: p.id, userId: userPorServidor.get(p.perfilServidorId)! }))
+  const perfilPorServidor = new Map(perfisProf.map(p => [p.perfilServidorId, p.id] as const))
+  type Prof = { email: string; userId: string; perfilProfessorId: string }
+  const profs: Prof[] = profSpecs.map(s => {
+    const userId = profUserIds.get(s.email)!
+    return { email: s.email, userId, perfilProfessorId: perfilPorServidor.get(servidorPorUser.get(userId)!)! }
+  })
 
   // 4. Alunos ---------------------------------------------------------------
   const alunoSpecs = gerarPessoas(QTD_ALUNOS, 'aluno.ifce.edu.br', ALUNOS_FIXOS)
@@ -337,6 +360,30 @@ export async function seedBulk() {
   const statusLista = shuffle(
     (Object.keys(PLANO_CURSOS) as StatusCurso[]).flatMap(k => Array<StatusCurso>(PLANO_CURSOS[k]).fill(k)),
   )
+
+  // 5a. Autoria: professores de vitrine com cotas por status; o resto numa cauda enviesada
+  const autoria: (Prof | undefined)[] = new Array(statusLista.length).fill(undefined)
+
+  // 1) professores de vitrine: cota por status
+  for (const dono of DONOS_FIXOS) {
+    const prof = profs.find(p => p.email === dono.email)
+    if (!prof) continue
+    for (const status of Object.keys(dono.cota) as StatusCurso[]) {
+      let falta = dono.cota[status] ?? 0
+      for (let i = 0; i < statusLista.length && falta > 0; i++) {
+        if (statusLista[i] === status && !autoria[i]) { autoria[i] = prof; falta-- }
+      }
+    }
+  }
+
+  // 2) restante: cauda enviesada (rand()**2 concentra nos primeiros), então alguns terão 2-3 cursos
+  const outros = profs.filter(p => !DONOS_FIXOS.some(d => d.email === p.email))
+  const poolAutores = outros.length ? outros : profs
+  const cauda = Math.min(poolAutores.length, 12)
+  for (let i = 0; i < autoria.length; i++) {
+    if (!autoria[i]) autoria[i] = poolAutores[Math.floor(rand() ** 2 * cauda)]!
+  }
+
   const cursos = statusLista.map((status, i) => {
     const base = TITULOS[i % TITULOS.length]!
     const [dataInicio, dataFim] = datasCurso(status)
@@ -346,7 +393,7 @@ export async function seedBulk() {
       status,
       vagas: int(20, 80),
       titulo: i < TITULOS.length ? base : `${base} — Turma B`,
-      prof: profs[i % profs.length]!,
+      prof: autoria[i]!,
       instituicaoId: pick(instituicoes).id,
       cargaHoraria: pick(CARGAS),
       dataInicio,
@@ -532,12 +579,13 @@ export async function seedBulk() {
     skipDuplicates: true,
   })
 
-   const adminIds = await criarUsuarios([ADMIN_DEPPI], papelDeppi.id, instituicoes, [30, 55])
-    await criarServidores([ADMIN_DEPPI], adminIds, '9', 'Técnico Administrativo em Educação', ['DEPPI'], instituicoes)
-    await prisma.userPapel.createMany({
-      data: [{ userId: adminIds.get(ADMIN_DEPPI.email)!, papelId: papelAdminDeppi.id }],
-      skipDuplicates: true,
-    })
+  // 8b. Admin DEPPI ---------------------------------------------------------
+  const adminIds = await criarUsuarios([ADMIN_DEPPI], papelDeppi.id, instituicoes, [30, 55])
+  await criarServidores([ADMIN_DEPPI], adminIds, '9', 'Técnico Administrativo em Educação', ['DEPPI'], instituicoes)
+  await prisma.userPapel.createMany({
+    data: [{ userId: adminIds.get(ADMIN_DEPPI.email)!, papelId: papelAdminDeppi.id }],
+    skipDuplicates: true,
+  })
 
   // 9. Resumo ---------------------------------------------------------------
   const [u, a, p, c, i, inst] = await Promise.all([
@@ -549,4 +597,21 @@ export async function seedBulk() {
   console.log(`✅ seed-bulk: usuários=${u} alunos=${a} professores=${p} cursos=${c} inscrições=${i} instituições=${inst}`)
   console.log('   inscrições por status:', JSON.stringify(insPorStatus.map(s => [s.status, s._count._all])))
   console.log('   cursos por status:    ', JSON.stringify(curPorStatus.map(s => [s.status, s._count._all])))
+
+  // Conferência da autoria (o que este run planejou; não consulta o banco)
+  for (const d of DONOS_FIXOS) {
+    const meus = cursos.filter(x => x.prof.email === d.email)
+    const porStatus = meus.reduce<Record<string, number>>((acc, x) => {
+      acc[x.status] = (acc[x.status] ?? 0) + 1
+      return acc
+    }, {})
+    console.log(`   ${d.email}: ${meus.length} cursos`, JSON.stringify(porStatus))
+  }
+  const contagem = new Map<string, number>()
+  for (const x of cursos) {
+    if (DONOS_FIXOS.some(d => d.email === x.prof.email)) continue
+    contagem.set(x.prof.email, (contagem.get(x.prof.email) ?? 0) + 1)
+  }
+  const dist = [...contagem.values()]
+  console.log(`   demais professores: ${dist.length} com curso, máx ${Math.max(0, ...dist)} por professor`)
 }
