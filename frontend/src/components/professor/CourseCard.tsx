@@ -68,6 +68,18 @@ export default function CourseCard({ course }: CourseCardProps) {
 
   return (
     <article className="flex flex-col rounded-xl border border-line bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
+      {course.imagemCapa ? (
+        <img
+          src={course.imagemCapa}
+          alt={`Capa do curso ${course.titulo}`}
+          loading="lazy"
+          className="mb-4 h-40 w-full rounded-lg object-cover"
+        />
+      ) : (
+        <div className="mb-4 flex h-40 w-full items-center justify-center rounded-lg bg-surface-2 text-ink-2">
+          <BookOpen size={36} />
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink">

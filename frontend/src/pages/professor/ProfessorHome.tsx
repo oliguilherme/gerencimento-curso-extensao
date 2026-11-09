@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
-import { Search, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import CourseCard from "../../components/professor/CourseCard";
 import { listarMeusCursos } from "../../services/cursosService";
 
-import type {
-  Curso,
-  StatusCurso,
-  TipoAcao,
-} from "../../types/cursos";
+import CourseFilter from "../../components/professor/CourseFilter";
 
-type StatusFilter = "TODOS" | StatusCurso;
-type TipoAcaoFilter = "TODOS" | TipoAcao;
+import type { Curso } from "../../types/cursos";
+
+import type { StatusFilter, TipoAcaoFilter } from "../../components/professor/CourseFilter";
 
 export default function ProfessorHome() {
   const [courses, setCourses] = useState<Curso[]>([]);
@@ -20,8 +17,7 @@ export default function ProfessorHome() {
   const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] =
-    useState<StatusFilter>("TODOS");
+  const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("TODOS");
 
   const [selectedTipoAcao, setSelectedTipoAcao] =
     useState<TipoAcaoFilter>("TODOS");
@@ -38,13 +34,9 @@ export default function ProfessorHome() {
 
       try {
         const data = await listarMeusCursos({
-          status:
-            selectedStatus === "TODOS" ? undefined : selectedStatus,
+          status: selectedStatus === "TODOS" ? undefined : selectedStatus,
 
-          tipoAcao:
-            selectedTipoAcao === "TODOS"
-              ? undefined
-              : selectedTipoAcao,
+          tipoAcao: selectedTipoAcao === "TODOS" ? undefined : selectedTipoAcao,
         });
 
         if (active) {
@@ -73,19 +65,14 @@ export default function ProfessorHome() {
   }, [selectedStatus, selectedTipoAcao, reloadKey]);
 
   const filteredCourses = courses.filter((course) =>
-    course.titulo
-      .toLowerCase()
-      .includes(searchTerm.trim().toLowerCase()),
+    course.titulo.toLowerCase().includes(searchTerm.trim().toLowerCase()),
   );
 
   return (
     <section className="space-y-6">
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-ink">
-            Meus cursos
-          </h1>
+          <h1 className="text-2xl font-bold text-ink">Meus cursos</h1>
 
           <p className="mt-1 text-sm text-ink-2">
             Gerencie e acompanhe os cursos sob sua responsabilidade.
@@ -107,9 +94,7 @@ export default function ProfessorHome() {
           role="status"
           className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4"
         >
-          <p className="text-sm text-ink-2">
-            ainda a ser feito.
-          </p>
+          <p className="text-sm text-ink-2">ainda a ser feito.</p>
 
           <button
             type="button"
@@ -122,79 +107,14 @@ export default function ProfessorHome() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-
-        <div>
-          <label
-            htmlFor="course-search"
-            className="mb-1.5 block text-sm font-medium text-ink"
-          >
-            Pesquisar curso
-          </label>
-
-          <div className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3">
-            <Search size={18} className="shrink-0 text-ink-2" />
-
-            <input
-              id="course-search"
-              type="text"
-              placeholder="Digite o nome do curso..."
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-full bg-transparent py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="status-filter"
-            className="mb-1.5 block text-sm font-medium text-ink"
-          >
-            Situação
-          </label>
-
-          <select
-            id="status-filter"
-            value={selectedStatus}
-            onChange={(event) =>
-              setSelectedStatus(event.target.value as StatusFilter)
-            }
-            className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink outline-none"
-          >
-            <option value="TODOS">Todas as situações</option>
-            <option value="RASCUNHO">Rascunho</option>
-            <option value="PUBLICADO">Publicado</option>
-            <option value="EM_ANDAMENTO">Em andamento</option>
-            <option value="ENCERRADO">Encerrado</option>
-            <option value="CANCELADO">Cancelado</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="action-filter"
-            className="mb-1.5 block text-sm font-medium text-ink"
-          >
-            Tipo de ação
-          </label>
-
-          <select
-            id="action-filter"
-            value={selectedTipoAcao}
-            onChange={(event) =>
-              setSelectedTipoAcao(event.target.value as TipoAcaoFilter)
-            }
-            className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink outline-none"
-          >
-            <option value="TODOS">Todos os tipos</option>
-            <option value="CURSO">Curso</option>
-            <option value="EVENTO">Evento</option>
-            <option value="PROJETO">Projeto</option>
-            <option value="PROGRAMA">Programa</option>
-          </select>
-        </div>
-      </div>
+      <CourseFilter
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedStatus={selectedStatus}
+        onStatusChange={setSelectedStatus}
+        selectedTipoAcao={selectedTipoAcao}
+        onTipoAcaoChange={setSelectedTipoAcao}
+      />
 
       {!isLoading && !error && (
         <p className="text-sm text-ink-2">
@@ -204,9 +124,7 @@ export default function ProfessorHome() {
 
       {isLoading && (
         <div className="rounded-xl border border-line bg-surface p-8 text-center">
-          <p className="text-sm text-ink-2">
-            Carregando cursos...
-          </p>
+          <p className="text-sm text-ink-2">Carregando cursos...</p>
         </div>
       )}
 
@@ -216,9 +134,7 @@ export default function ProfessorHome() {
             Não foi possível carregar os cursos.
           </p>
 
-          <p className="mt-1 text-sm text-red-600">
-            {error}
-          </p>
+          <p className="mt-1 text-sm text-red-600">{error}</p>
 
           <button
             type="button"
@@ -240,9 +156,7 @@ export default function ProfessorHome() {
 
       {!isLoading && !error && filteredCourses.length === 0 && (
         <div className="rounded-xl border border-line bg-surface p-8 text-center">
-          <p className="font-medium text-ink">
-            Nenhum curso encontrado.
-          </p>
+          <p className="font-medium text-ink">Nenhum curso encontrado.</p>
 
           <p className="mt-1 text-sm text-ink-2">
             Tente alterar os termos da pesquisa ou os filtros.
