@@ -3,7 +3,6 @@ import { getAccessToken, getRefreshToken, clearTokens } from "./auth";
 import { refreshAccessToken } from "../services/authService";
 import { notifySessionExpired } from "./authEvents";
 
-// Cria uma nova requisição com o access token no cabeçalho.
 function createAuthenticatedRequest(
   originalRequest: Request,
   accessToken: string,
