@@ -1,13 +1,14 @@
+import { useState } from "react";
+import { Search, Plus, X } from "lucide-react";
+
 import { professorCourses } from "../../mocks/professorCourses";
 import CourseCard from "../../components/professor/CourseCard";
-
-import { useState } from "react";
-import { Search } from "lucide-react";
 
 export default function ProfessorHome() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("TODOS");
   const [selectedCampus, setSelectedCampus] = useState("TODOS");
+  const [showCreateNotice, setShowCreateNotice] = useState(false);
 
   const campuses = Array.from(
     new Set(professorCourses.map((course) => course.campus)),
@@ -29,13 +30,44 @@ export default function ProfessorHome() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Meus cursos</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Meus cursos</h1>
 
-        <p className="mt-1 text-sm text-ink-2">
-          Gerencie e acompanhe os cursos sob sua responsabilidade.
-        </p>
+          <p className="mt-1 text-sm text-ink-2">
+            Gerencie e acompanhe os cursos sob sua responsabilidade.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowCreateNotice(true)}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90"
+        >
+          <Plus size={18} />
+          Criar curso
+        </button>
       </div>
+
+      {showCreateNotice && (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4"
+        >
+          <p className="text-sm text-ink-2">
+           ainda nao funciona
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setShowCreateNotice(false)}
+            aria-label="Fechar aviso"
+            className="shrink-0 text-ink-2 transition-colors hover:text-ink"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="md:col-span-1">
