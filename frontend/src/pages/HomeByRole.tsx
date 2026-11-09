@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
-import AdminHome from "../pages/admin/AdminHome";
+import AdminHome from "./admin/AdminHome";
 
 
 export default function HomeByRole() {

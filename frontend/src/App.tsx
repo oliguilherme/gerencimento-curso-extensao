@@ -5,7 +5,7 @@ import Logout from "./pages/Logout";
 import AppLayout from "./components/layout/AppLayout";
 import AccessDenied from "./pages/AccessDenied";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import HomeByRole from "./components/HomeByRole";
+import HomeByRole from "./pages/HomeByRole";
 
 function App() {
   return (
