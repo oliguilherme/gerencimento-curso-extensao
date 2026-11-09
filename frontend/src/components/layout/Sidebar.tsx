@@ -8,6 +8,7 @@ export default function Sidebar() {
   const { user } = useAuth();
 
   const currentRole = rolePriority.find((role) => user?.roles.includes(role));
+  const roleInitial = currentRole ? currentRole.charAt(0).toUpperCase() : "?";
 
   const menuItems = currentRole ? navigationByRole[currentRole] : [];
 
@@ -15,11 +16,11 @@ export default function Sidebar() {
     <aside className="hidden min-h-screen w-64 shrink-0 border-r border-line bg-sidebar px-3 py-5 md:block">
       <div className="mb-7 flex items-center gap-3 px-2">
         <div className="grid size-8 place-items-center rounded-lg bg-accent font-display font-bold text-white">
-          D
+          {roleInitial}
         </div>
 
         <div>
-          <h2 className="font-display text-sm font-semibold">DEPPI</h2>
+          <h2 className="font-display text-sm font-semibold">{currentRole}</h2>
 
           <p className="text-xs text-ink-2">IFCE · Extensão</p>
         </div>
