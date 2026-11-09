@@ -1,9 +1,31 @@
 import { API_URL } from "../config/api";
 import { apiFetch } from "../lib/apiFetch";
-import type { Curso } from "../types/cursos";
 
-export async function listarCursos(): Promise<Curso[]> {
-  const response = await apiFetch(`${API_URL}/cursos`);
+import type { Curso, StatusCurso, TipoAcao } from "../types/cursos";
+
+interface ListarMeusCursosFilters {
+  status?: StatusCurso;
+  tipoAcao?: TipoAcao;
+}
+
+export async function listarMeusCursos(
+  filters: ListarMeusCursosFilters = {},
+): Promise<Curso[]> {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters.tipoAcao) {
+    params.set("tipoAcao", filters.tipoAcao);
+  }
+
+  const queryString = params.toString();
+
+  const url = `${API_URL}/cursos/meus${queryString ? `?${queryString}` : ""}`;
+
+  const response = await apiFetch(url);
 
   const result: unknown = await response.json().catch(() => null);
 
@@ -18,7 +40,7 @@ export async function listarCursos(): Promise<Curso[]> {
       } else if (typeof body.message === "string") {
         message = body.message;
       }
-    } 
+    }
 
     throw new Error(message);
   }
