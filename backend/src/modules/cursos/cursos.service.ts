@@ -67,6 +67,34 @@ export class CursosService {
     return cursos;
   }
 
+  static async listCursosProfessor(
+    filters: ListCursosQueryDTO,
+    userId: string,
+  ) {
+    const cleanFilters = stripUndefined(filters);
+
+    const cursos = await prisma.cursoExtensao.findMany({
+      where: {
+        ...cleanFilters,
+
+        professor: {
+          is: {
+            perfilServidor: {
+              is: {
+                userId,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return cursos;
+  }
+
   static async findCursoById(id: string) {
     const curso = await prisma.cursoExtensao.findUnique({
       where: { id },

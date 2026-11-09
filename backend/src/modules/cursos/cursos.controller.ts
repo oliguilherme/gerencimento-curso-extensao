@@ -1,5 +1,6 @@
 import { type Request, type Response } from "express";
 import { CursosService } from "./cursos.service.js";
+import type { ListCursosQueryDTO } from "./cursos.schema.js";
 
 export class CursosController {
   static async create(req: Request, res: Response) {
@@ -10,15 +11,30 @@ export class CursosController {
   static async uploadImagem(req: Request, res: Response) {
     const { id } = req.params as { id: string };
 
-    const curso = await CursosService.uploadImagem(
-        id,
-        req.file
-    );
+    const curso = await CursosService.uploadImagem(id, req.file);
 
     return res.json(curso);
   }
+
   static async list(req: Request, res: Response) {
     const cursos = await CursosService.listCursos(req.query as any);
+    return res.status(200).json(cursos);
+  }
+
+  static async listMeus(req: Request, res: Response) {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Usuário não autenticado.",
+      });
+    }
+
+    const cursos = await CursosService.listCursosProfessor(
+      req.query as ListCursosQueryDTO,
+      user.sub,
+    );
+
     return res.status(200).json(cursos);
   }
 
@@ -36,7 +52,7 @@ export class CursosController {
     const curso = await CursosService.updateCurso(id, userId, roles, req.body);
     return res.status(200).json(curso);
   }
-    static async close(req: Request, res: Response) {
+  static async close(req: Request, res: Response) {
     const { id } = req.params as { id: string };
     const userId = req.user!.sub;
     const roles = req.user!.roles;
@@ -44,7 +60,6 @@ export class CursosController {
     const curso = await CursosService.closeCurso(id, userId, roles);
     return res.status(200).json(curso);
   }
-
 
   static async remove(req: Request, res: Response) {
     const { id } = req.params as { id: string };
