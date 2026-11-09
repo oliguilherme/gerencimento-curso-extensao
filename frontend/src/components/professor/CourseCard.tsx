@@ -1,35 +1,58 @@
-import {
-  CalendarDays,
-  Clock3,
-  GraduationCap,
-  MapPin,
-  Users,
-} from "lucide-react";
+import { CalendarDays, Clock3, Users, BookOpen, MapPin } from "lucide-react";
 
-import type { ProfessorCourse } from "../../types/professor";
+import type {
+  Curso,
+  StatusCurso,
+  TipoAcao,
+  TipoCurso,
+  ModeloOferta,
+} from "../../types/cursos";
 
 interface CourseCardProps {
-  course: ProfessorCourse;
+  course: Curso;
 }
 
-const statusConfig = {
-  EM_ANDAMENTO: {
-    label: "Em andamento",
-    className: "bg-green-50 text-green-700",
-  },
-  EM_ANALISE: {
-    label: "Em análise",
-    className: "bg-yellow-50 text-yellow-700",
-  },
-  CONCLUIDO: {
-    label: "Concluído",
-    className: "bg-blue-50 text-blue-700",
-  },
-  FECHADO: {
-    label: "Fechado",
-    className: "bg-gray-100 text-gray-600",
-  },
-} as const;
+const statusConfig: Record<StatusCurso, { label: string; className: string }> =
+  {
+    RASCUNHO: {
+      label: "Rascunho",
+      className: "bg-gray-100 text-gray-600",
+    },
+    PUBLICADO: {
+      label: "Publicado",
+      className: "bg-blue-50 text-blue-700",
+    },
+    EM_ANDAMENTO: {
+      label: "Em andamento",
+      className: "bg-green-50 text-green-700",
+    },
+    ENCERRADO: {
+      label: "Encerrado",
+      className: "bg-gray-100 text-gray-600",
+    },
+    CANCELADO: {
+      label: "Cancelado",
+      className: "bg-red-50 text-red-700",
+    },
+  };
+
+const tipoAcaoLabels: Record<TipoAcao, string> = {
+  CURSO: "Curso",
+  EVENTO: "Evento",
+  PROJETO: "Projeto",
+  PROGRAMA: "Programa",
+};
+
+const tipoCursoLabels: Record<TipoCurso, string> = {
+  FORMACAO_INICIAL: "Formação inicial",
+  FORMACAO_CONTINUADA: "Formação continuada",
+};
+
+const modeloOfertaLabels: Record<ModeloOferta, string> = {
+  PRESENCIAL: "Presencial",
+  ONLINE: "Online",
+  HIBRIDO: "Híbrido",
+};
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -37,37 +60,23 @@ function formatDate(date: string) {
     month: "2-digit",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(`${date}T00:00:00Z`));
+  }).format(new Date(date));
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
-  const status = statusConfig[course.situacao as keyof typeof statusConfig] ?? {
-    label: course.situacao,
-    className: "bg-gray-100 text-gray-600",
-  };
-
-  const occupancyPercentage =
-    course.totalVagas > 0
-      ? Math.min((course.vagasOcupadas / course.totalVagas) * 100, 100)
-      : 0;
+  const status = statusConfig[course.status];
 
   return (
     <article className="flex flex-col rounded-xl border border-line bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent/10 font-display text-sm font-bold text-accent">
-            {course.sigla}
-          </div>
+        <div className="min-w-0">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink">
+            {course.titulo}
+          </h3>
 
-          <div className="min-w-0">
-            <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink">
-              {course.nome}
-            </h3>
-
-            <p className="mt-1 text-xs text-ink-2">
-              {course.instituicao} · Campus {course.campus}
-            </p>
-          </div>
+          <p className="mt-1 text-xs text-ink-2">
+            {tipoAcaoLabels[course.tipoAcao]} · {tipoCursoLabels[course.tipo]}
+          </p>
         </div>
 
         <span
@@ -83,9 +92,11 @@ export default function CourseCard({ course }: CourseCardProps) {
 
           <div>
             <p className="text-[11px] text-ink-2">Período</p>
+
             <p className="mt-1 text-xs font-medium text-ink">
               {formatDate(course.dataInicio)}
             </p>
+
             <p className="text-xs text-ink-2">
               até {formatDate(course.dataFim)}
             </p>
@@ -96,11 +107,15 @@ export default function CourseCard({ course }: CourseCardProps) {
           <Clock3 size={16} className="mt-0.5 shrink-0 text-ink-2" />
 
           <div>
-            <p className="text-[11px] text-ink-2">Horário</p>
+            <p className="text-[11px] text-ink-2">Carga horária</p>
+
             <p className="mt-1 text-xs font-medium text-ink">
-              {course.horarioInicio} – {course.horarioFim}
+              {course.cargaHoraria} horas
             </p>
-            <p className="text-xs text-ink-2">{course.cargaHoraria} horas</p>
+
+            <p className="text-xs text-ink-2">
+              {modeloOfertaLabels[course.modeloOferta]}
+            </p>
           </div>
         </div>
       </div>
@@ -109,31 +124,27 @@ export default function CourseCard({ course }: CourseCardProps) {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Users size={15} className="text-ink-2" />
-            <span className="text-xs text-ink-2">Vagas ocupadas</span>
+
+            <span className="text-xs text-ink-2">Beneficiados previstos</span>
           </div>
 
           <span className="text-xs font-semibold text-ink">
-            {course.vagasOcupadas}/{course.totalVagas}
+            {course.minBeneficiados}–{course.maxBeneficiados}
           </span>
-        </div>
-
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
-          <div
-            className="h-full rounded-full bg-accent transition-all"
-            style={{ width: `${occupancyPercentage}%` }}
-          />
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-xs text-ink-2">
-          <GraduationCap size={15} />
-          <span>{course.cargaHoraria}h de carga horária</span>
+          <BookOpen size={15} />
+
+          <span>{course.areaTematica}</span>
         </div>
 
         <span className="flex items-center gap-1 text-xs text-ink-2">
           <MapPin size={13} />
-          {course.campus}
+
+          {course.localAtuacao === "URBANO" ? "Urbano" : "Rural"}
         </span>
       </div>
     </article>
