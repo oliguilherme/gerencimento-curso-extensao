@@ -29,7 +29,6 @@ export default function Header({ pageTitle }: HeaderProps) {
 
   const name = user?.name ?? "Usuário";
 
-  // Identifica o papel de maior prioridade do usuário.
   const role = rolePriority.find((role) => user?.roles.includes(role));
 
   return (

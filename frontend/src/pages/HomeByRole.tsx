@@ -13,7 +13,7 @@ export default function HomeByRole() {
   }
 
   if (hasRole("PROFESSOR")) {
-    return <ProfessorHome />
+    return <ProfessorHome />  
   }
 
   return <Navigate to="/acesso-negado" replace />;
