@@ -10,7 +10,9 @@ export function validateZod(schema: ZodType, source: 'body' | 'params' | 'query'
     // Express 5 não permite sobrescrever req.query (somente getter).
     // Para body e params reatribuímos normalmente; para query apenas validamos
     // e deixamos o controller ler de req.query diretamente.
-    if (source !== 'query') {
+    if (source === 'query') {
+      res.locals.validateQuery = result.data;
+    } else {
       req[source] = result.data;
     }
     next();
