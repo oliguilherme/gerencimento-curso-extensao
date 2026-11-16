@@ -1,17 +1,43 @@
 import { API_URL } from "../config/api";
 import { apiFetch } from "../lib/apiFetch";
 
-import type { Curso, StatusCurso, TipoAcao } from "../types/cursos";
+import type {
+  Curso,
+  StatusCurso,
+  TipoAcao,
+  TipoCurso,
+  ListarMeusCursosResponse,
+} from "../types/cursos";
 
-interface ListarMeusCursosFilters {
+export interface ListarMeusCursosFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
   status?: StatusCurso;
+  tipo?: TipoCurso;
   tipoAcao?: TipoAcao;
+  instituicaoId?: string;
 }
 
 export async function listarMeusCursos(
   filters: ListarMeusCursosFilters = {},
-): Promise<Curso[]> {
+): Promise<ListarMeusCursosResponse> {
   const params = new URLSearchParams();
+
+  params.set("page", String(filters.page ?? 1));
+  params.set("limit", String(filters.limit ?? 6));
+
+  if (filters.search?.trim()) {
+    params.set("search", filters.search.trim());
+  }
+
+  if (filters.tipo) {
+    params.set("tipo", filters.tipo);
+  }
+
+  if (filters.instituicaoId) {
+    params.set("instituicaoId", filters.instituicaoId);
+  }
 
   if (filters.status) {
     params.set("status", filters.status);
@@ -21,9 +47,7 @@ export async function listarMeusCursos(
     params.set("tipoAcao", filters.tipoAcao);
   }
 
-  const queryString = params.toString();
-
-  const url = `${API_URL}/cursos/meus${queryString ? `?${queryString}` : ""}`;
+  const url = `${API_URL}/cursos/meus?${params.toString()}`;
 
   const response = await apiFetch(url);
 
@@ -45,9 +69,15 @@ export async function listarMeusCursos(
     throw new Error(message);
   }
 
-  if (!Array.isArray(result)) {
+  if (
+    typeof result !== "object" ||
+    result === null ||
+    !("data" in result) ||
+    !("pagination" in result) ||
+    !Array.isArray(result.data)
+  ) {
     throw new Error("A API retornou uma resposta inesperada.");
   }
 
-  return result as Curso[];
+  return result as ListarMeusCursosResponse;
 }
