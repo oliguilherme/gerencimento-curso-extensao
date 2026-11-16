@@ -1,6 +1,10 @@
-import { prisma } from '../../lib/prisma.js';
-import { AppError } from '../../utils/AppError.js';
-import { type CreateCursoDTO, type UpdateCursoDTO, type ListCursosQueryDTO } from './cursos.schema.js';
+import { prisma } from "../../lib/prisma.js";
+import { AppError } from "../../utils/AppError.js";
+import {
+  type CreateCursoDTO,
+  type UpdateCursoDTO,
+  type ListCursosQueryDTO,
+} from "./cursos.schema.js";
 
 // Remove chaves com valor undefined do objeto.
 // Necessário por causa do exactOptionalPropertyTypes: true no tsconfig —
@@ -9,7 +13,7 @@ import { type CreateCursoDTO, type UpdateCursoDTO, type ListCursosQueryDTO } fro
 // como `T | undefined` nos contextos where/data do Prisma — use `as any` no ponto de uso.
 function stripUndefined(obj: object): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(obj).filter(([, value]) => value !== undefined)
+    Object.entries(obj).filter(([, value]) => value !== undefined),
   );
 }
 
@@ -23,7 +27,10 @@ export class CursosService {
     });
 
     if (!perfilServidor || !perfilServidor.perfilProfessor) {
-      throw new AppError('Usuário não possui um PerfilProfessor associado.', 400);
+      throw new AppError(
+        "Usuário não possui um PerfilProfessor associado.",
+        400,
+      );
     }
 
     return perfilServidor.perfilProfessor;
@@ -40,7 +47,7 @@ export class CursosService {
     });
 
     if (!user) {
-      throw new AppError('Usuário não encontrado.', 404);
+      throw new AppError("Usuário não encontrado.", 404);
     }
 
     const cleanData = stripUndefined(data);
@@ -61,7 +68,7 @@ export class CursosService {
 
     const cursos = await prisma.cursoExtensao.findMany({
       where: cleanFilters as any,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return cursos;
@@ -71,28 +78,61 @@ export class CursosService {
     filters: ListCursosQueryDTO,
     userId: string,
   ) {
-    const cleanFilters = stripUndefined(filters);
+    const { page, limit, search, instituicaoId, ...courseFilters } = filters;
 
-    const cursos = await prisma.cursoExtensao.findMany({
-      where: {
-        ...cleanFilters,
+    const cleanFilters = stripUndefined(courseFilters);
 
-        professor: {
-          is: {
-            perfilServidor: {
-              is: {
-                userId,
-              },
+    const where = {
+      ...cleanFilters,
+
+      ...(search ? { titulo: { contains: search, mode: "insensitive" as const, } } : {}),
+
+      ...(instituicaoId ? { instituicaoId } : {}),
+
+      professor: {
+        is: {
+          perfilServidor: {
+            is: {
+              userId,
             },
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    };
 
-    return cursos;
+    const skip = (page - 1) * limit;
+
+    return prisma.$transaction(async (tx) => {
+      const total = await tx.cursoExtensao.count({
+        where,
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      if (page > Math.max(totalPages, 1)) {
+        throw new AppError("Página solicitada inexistente.", 400);
+      }
+
+      const cursos = await tx.cursoExtensao.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      });
+
+      return {
+        data: cursos,
+
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    });
   }
 
   static async findCursoById(id: string) {
@@ -122,7 +162,7 @@ export class CursosService {
     });
 
     if (!curso) {
-      throw new AppError('Curso não encontrado.', 404);
+      throw new AppError("Curso não encontrado.", 404);
     }
 
     return curso;
@@ -133,7 +173,7 @@ export class CursosService {
     const curso = await prisma.cursoExtensao.findUnique({ where: { id } });
 
     if (!curso) {
-      throw new AppError('Curso não encontrado.', 404);
+      throw new AppError("Curso não encontrado.", 404);
     }
 
     return curso;
@@ -141,25 +181,40 @@ export class CursosService {
 
   // Verifica se o usuário logado pode gerenciar (editar/cancelar) o curso.
   // DEPPI pode sempre. PROFESSOR só se for o dono (professorId do curso).
-  private static async assertCanManageCurso(userId: string, roles: string[], cursoProfessorId: string) {
-    if (roles.includes('DEPPI')) {
+  private static async assertCanManageCurso(
+    userId: string,
+    roles: string[],
+    cursoProfessorId: string,
+  ) {
+    if (roles.includes("DEPPI")) {
       return;
     }
 
-    if (roles.includes('PROFESSOR')) {
+    if (roles.includes("PROFESSOR")) {
       const perfilProfessor = await this.getPerfilProfessorByUserId(userId);
 
       if (perfilProfessor.id === cursoProfessorId) {
         return;
       }
 
-      throw new AppError('Você não tem permissão para gerenciar este curso: não é o professor responsável.', 403);
+      throw new AppError(
+        "Você não tem permissão para gerenciar este curso: não é o professor responsável.",
+        403,
+      );
     }
 
-    throw new AppError('Você não tem permissão para gerenciar este curso.', 403);
+    throw new AppError(
+      "Você não tem permissão para gerenciar este curso.",
+      403,
+    );
   }
 
-  static async updateCurso(id: string, userId: string, roles: string[], data: UpdateCursoDTO) {
+  static async updateCurso(
+    id: string,
+    userId: string,
+    roles: string[],
+    data: UpdateCursoDTO,
+  ) {
     const curso = await this.getCursoOrThrow(id);
 
     await this.assertCanManageCurso(userId, roles, curso.professorId);
@@ -181,36 +236,32 @@ export class CursosService {
 
     const cancelado = await prisma.cursoExtensao.update({
       where: { id },
-      data: { status: 'CANCELADO' },
+      data: { status: "CANCELADO" },
     });
 
     return cancelado;
   }
-    static async removeCurso(id: string, userId: string, roles: string[]) {
+  static async removeCurso(id: string, userId: string, roles: string[]) {
     const curso = await this.getCursoOrThrow(id);
- 
+
     await this.assertCanManageCurso(userId, roles, curso.professorId);
- 
+
     await prisma.cursoExtensao.delete({ where: { id } });
- 
-    return { message: 'Curso removido permanentemente.' };
+
+    return { message: "Curso removido permanentemente." };
   }
 
-
   static async uploadImagem(id: string, file?: Express.Multer.File) {
-
     if (!file) {
-        throw new AppError("Imagem não enviada.", 400);
+      throw new AppError("Imagem não enviada.", 400);
     }
 
     const curso = await prisma.cursoExtensao.update({
+      where: { id },
 
-        where: { id },
-
-        data: {
-            imagemCapa: `/uploads/cursos/${file.filename}`
-        } as any,
-
+      data: {
+        imagemCapa: `/uploads/cursos/${file.filename}`,
+      } as any,
     });
 
     return curso;
@@ -221,13 +272,16 @@ export class CursosService {
 
     await this.assertCanManageCurso(userId, roles, curso.professorId);
 
-    if (curso.status !== 'RASCUNHO') {
-      throw new AppError(`Não é possível publicar um curso com status "${curso.status}". Só cursos em RASCUNHO podem ser publicados.`, 400);
+    if (curso.status !== "RASCUNHO") {
+      throw new AppError(
+        `Não é possível publicar um curso com status "${curso.status}". Só cursos em RASCUNHO podem ser publicados.`,
+        400,
+      );
     }
 
     const publicado = await prisma.cursoExtensao.update({
       where: { id },
-      data: { status: 'PUBLICADO' },
+      data: { status: "PUBLICADO" },
     });
 
     return publicado;
@@ -238,14 +292,17 @@ export class CursosService {
 
     await this.assertCanManageCurso(userId, roles, curso.professorId);
 
-    const statusPermitidos = ['PUBLICADO', 'EM_ANDAMENTO'];
+    const statusPermitidos = ["PUBLICADO", "EM_ANDAMENTO"];
     if (!statusPermitidos.includes(curso.status)) {
-      throw new AppError(`Não é possível encerrar um curso com status "${curso.status}". Só cursos PUBLICADO ou EM_ANDAMENTO podem ser encerrados.`, 400);
+      throw new AppError(
+        `Não é possível encerrar um curso com status "${curso.status}". Só cursos PUBLICADO ou EM_ANDAMENTO podem ser encerrados.`,
+        400,
+      );
     }
 
     const encerrado = await prisma.cursoExtensao.update({
       where: { id },
-      data: { status: 'ENCERRADO' },
+      data: { status: "ENCERRADO" },
     });
 
     return encerrado;
