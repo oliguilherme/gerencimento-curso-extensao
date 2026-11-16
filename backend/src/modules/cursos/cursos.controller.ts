@@ -31,7 +31,7 @@ export class CursosController {
     }
 
     const cursos = await CursosService.listCursosProfessor(
-      req.query as ListCursosQueryDTO,
+      res.locals.validateQuery as ListCursosQueryDTO,
       user.sub,
     );
 
