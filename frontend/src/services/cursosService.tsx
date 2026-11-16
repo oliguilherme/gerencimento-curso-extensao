@@ -2,7 +2,6 @@ import { API_URL } from "../config/api";
 import { apiFetch } from "../lib/apiFetch";
 
 import type {
-  Curso,
   StatusCurso,
   TipoAcao,
   TipoCurso,

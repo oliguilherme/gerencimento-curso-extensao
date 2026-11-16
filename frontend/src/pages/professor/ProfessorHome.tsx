@@ -1,22 +1,34 @@
 import { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 import CourseCard from "../../components/professor/CourseCard";
+
 import { listarMeusCursos } from "../../services/cursosService";
 
 import CourseFilter from "../../components/professor/CourseFilter";
 
-import type { Curso } from "../../types/cursos";
+import type { Curso, CursosPagination } from "../../types/cursos";
 
-import type { StatusFilter, TipoAcaoFilter } from "../../components/professor/CourseFilter";
+import type {
+  StatusFilter,
+  TipoAcaoFilter,
+} from "../../components/professor/CourseFilter";
+
+const COURSES_PER_PAGE = 6;
 
 export default function ProfessorHome() {
   const [courses, setCourses] = useState<Curso[]>([]);
+
+  const [pagination, setPagination] = useState<CursosPagination | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("TODOS");
 
   const [selectedTipoAcao, setSelectedTipoAcao] =
@@ -25,6 +37,16 @@ export default function ProfessorHome() {
   const [showCreateNotice, setShowCreateNotice] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
+  // Aguarda 400ms depois da última digitação para pesquisar.
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Busca os cursos sempre que os filtros ou a página mudarem.
   useEffect(() => {
     let active = true;
 
@@ -33,17 +55,26 @@ export default function ProfessorHome() {
       setError(null);
 
       try {
-        const data = await listarMeusCursos({
+        const result = await listarMeusCursos({
+          page: currentPage,
+          limit: COURSES_PER_PAGE,
+
+          search: debouncedSearchTerm || undefined,
+
           status: selectedStatus === "TODOS" ? undefined : selectedStatus,
 
           tipoAcao: selectedTipoAcao === "TODOS" ? undefined : selectedTipoAcao,
         });
 
         if (active) {
-          setCourses(data);
+          setCourses(result.data);
+          setPagination(result.pagination);
         }
       } catch (error) {
         if (active) {
+          setCourses([]);
+          setPagination(null);
+
           setError(
             error instanceof Error
               ? error.message
@@ -62,11 +93,13 @@ export default function ProfessorHome() {
     return () => {
       active = false;
     };
-  }, [selectedStatus, selectedTipoAcao, reloadKey]);
-
-  const filteredCourses = courses.filter((course) =>
-    course.titulo.toLowerCase().includes(searchTerm.trim().toLowerCase()),
-  );
+  }, [
+    currentPage,
+    debouncedSearchTerm,
+    selectedStatus,
+    selectedTipoAcao,
+    reloadKey,
+  ]);
 
   return (
     <section className="space-y-6">
@@ -94,7 +127,7 @@ export default function ProfessorHome() {
           role="status"
           className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4"
         >
-          <p className="text-sm text-ink-2">ainda a ser feito.</p>
+          <p className="text-sm text-ink-2">Ainda a ser feito.</p>
 
           <button
             type="button"
@@ -109,16 +142,56 @@ export default function ProfessorHome() {
 
       <CourseFilter
         searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        onSearchChange={(value) => {
+          setSearchTerm(value);
+          setCurrentPage(1);
+        }}
         selectedStatus={selectedStatus}
-        onStatusChange={setSelectedStatus}
+        onStatusChange={(value) => {
+          setSelectedStatus(value);
+          setCurrentPage(1);
+        }}
         selectedTipoAcao={selectedTipoAcao}
-        onTipoAcaoChange={setSelectedTipoAcao}
+        onTipoAcaoChange={(value) => {
+          setSelectedTipoAcao(value);
+          setCurrentPage(1);
+        }}
       />
 
-      {!isLoading && !error && (
+      {/* Paginação */}
+          {pagination && pagination.total > 0 && (
+            <div className="flex flex-col items-center justify-between gap-4 border-t border-line pt-5 sm:flex-row">
+              <p className="text-sm text-ink-2">
+                Página {pagination.page} de {Math.max(pagination.totalPages, 1)}
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!pagination.hasPreviousPage || isLoading}
+                  onClick={() => setCurrentPage((page) => page - 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft size={16} />
+                  Anterior
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!pagination.hasNextPage || isLoading}
+                  onClick={() => setCurrentPage((page) => page + 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Próxima
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+
+      {!isLoading && !error && pagination && (
         <p className="text-sm text-ink-2">
-          {filteredCourses.length} curso(s) encontrado(s)
+          {pagination.total} curso(s) encontrado(s)
         </p>
       )}
 
@@ -146,15 +219,19 @@ export default function ProfessorHome() {
         </div>
       )}
 
-      {!isLoading && !error && filteredCourses.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredCourses.map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
-        </div>
+      {!isLoading && !error && courses.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {courses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+
+          
+        </>
       )}
 
-      {!isLoading && !error && filteredCourses.length === 0 && (
+      {!isLoading && !error && courses.length === 0 && (
         <div className="rounded-xl border border-line bg-surface p-8 text-center">
           <p className="font-medium text-ink">Nenhum curso encontrado.</p>
 
