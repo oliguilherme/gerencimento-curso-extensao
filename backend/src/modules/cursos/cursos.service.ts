@@ -85,7 +85,13 @@ export class CursosService {
     const where = {
       ...cleanFilters,
 
-      ...(search ? { titulo: { contains: search, mode: "insensitive" as const, } } : {}),
+       ...(search
+    ? {
+        titulo: {
+          contains: search,
+        },
+      }
+    : {}),
 
       ...(instituicaoId ? { instituicaoId } : {}),
 
@@ -102,37 +108,39 @@ export class CursosService {
 
     const skip = (page - 1) * limit;
 
-    return prisma.$transaction(async (tx) => {
-      const total = await tx.cursoExtensao.count({
+    // Executa as duas consultas em paralelo.
+    const [total, cursos] = await Promise.all([
+      prisma.cursoExtensao.count({
         where,
-      });
+      }),
 
-      const totalPages = Math.ceil(total / limit);
-
-      if (page > Math.max(totalPages, 1)) {
-        throw new AppError("Página solicitada inexistente.", 400);
-      }
-
-      const cursos = await tx.cursoExtensao.findMany({
+      prisma.cursoExtensao.findMany({
         where,
         skip,
         take: limit,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      });
+      }),
+    ]);
 
-      return {
-        data: cursos,
+    const totalPages = Math.ceil(total / limit);
 
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-          hasNextPage: page < totalPages,
-          hasPreviousPage: page > 1,
-        },
-      };
-    });
+    // Verifica se a página solicitada existe.
+    if (page > Math.max(totalPages, 1)) {
+      throw new AppError("Página solicitada inexistente.", 400);
+    }
+
+    return {
+      data: cursos,
+
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 
   static async findCursoById(id: string) {
